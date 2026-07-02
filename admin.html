@@ -68,6 +68,13 @@
       <div><label>점심 종료</label><input type="time" id="lunchEnd" value="13:00"></div>
       <div><label>슬롯당 정원(예약 가능 인원)</label><input type="number" id="capacity" value="1" min="1"></div>
     </div>
+    <div class="row">
+      <div style="flex:1 1 100%;">
+        <label>제외할 날짜 (공휴일·대체휴무일·중도금 약정일 포함 등)</label>
+        <input type="text" id="excludeDates" placeholder="예: 2026-08-11, 2026-09-08 (쉼표로 구분)">
+        <p style="font-size:12px;color:#888;margin:4px 0 0;">위 기간/요일 조건에 해당하더라도 여기 적힌 날짜는 생성에서 제외됩니다.</p>
+      </div>
+    </div>
     <button onclick="addSlots()">일정 생성</button>
     <span id="addMsg" style="font-size:12px;margin-left:10px;"></span>
   </div>
@@ -75,6 +82,13 @@
   <div class="card">
     <h2>등록된 일정 목록</h2>
     <button class="secondary" onclick="loadSlots()">새로고침</button>
+
+    <div class="row" style="align-items:flex-end;margin-top:14px;">
+      <div><label>특정 날짜 전체 삭제</label><input type="date" id="deleteDate"></div>
+      <div style="flex:0;"><button class="del-btn" style="margin-top:0;padding:9px 14px;" onclick="deleteByDate()">해당 날짜 슬롯 전체 삭제</button></div>
+    </div>
+    <p style="font-size:12px;color:#888;margin:4px 0 14px;">이미 만들어진 일정을 뒤늦게 공휴일 등으로 통째로 제외하고 싶을 때 사용합니다. (예약자가 있는 시간대는 안전을 위해 삭제되지 않습니다)</p>
+
     <table id="slotTable">
       <thead><tr><th>날짜</th><th>요일</th><th>시간</th><th>정원</th><th>예약</th><th>상태</th><th>삭제</th></tr></thead>
       <tbody></tbody>
@@ -145,13 +159,31 @@ async function addSlots(){
     endTime: document.getElementById('endTime').value,
     lunchStart: document.getElementById('lunchStart').value,
     lunchEnd: document.getElementById('lunchEnd').value,
-    capacity: document.getElementById('capacity').value
+    capacity: document.getElementById('capacity').value,
+    excludeDates: document.getElementById('excludeDates').value
   });
   if(json.ok){
     msg.textContent = `${json.data.length}개 슬롯 생성 완료`;
     loadSlots();
   }else{
     msg.textContent = '생성 실패: ' + json.error;
+  }
+}
+
+async function deleteByDate(){
+  const date = document.getElementById('deleteDate').value;
+  if(!date){ alert('삭제할 날짜를 선택해주세요.'); return; }
+  if(!confirm(`${date} 의 모든 예약 가능 슬롯을 삭제하시겠습니까? (예약자가 있는 시간대는 제외됩니다)`)) return;
+
+  const json = await apiPost('deleteSlotsByDate', { date });
+  if(json.ok){
+    const d = json.data;
+    let msg = `${d.date}: ${d.deleted}개 삭제 완료`;
+    if(d.skipped > 0) msg += ` / ${d.skipped}개는 이미 예약자가 있어 건너뜀`;
+    alert(msg);
+    loadSlots();
+  }else{
+    alert('삭제 실패: ' + json.error);
   }
 }
 
