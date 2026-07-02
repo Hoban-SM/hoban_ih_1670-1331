@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>부부 공동명의(분양권 전매) 신청 예약 - 인천검단 AB13 호반써밋Ⅲ</title>
+<style>
+  :root{
+    --hoban-orange:#e85c0d;
+    --gray-bg:#f5f6f8;
+    --border:#dcdfe4;
+    --text:#222;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+    background:var(--gray-bg);
+    margin:0; padding:0; color:var(--text);
+  }
+  .wrap{max-width:640px;margin:0 auto;background:#fff;min-height:100vh;}
+  header{
+    background:var(--hoban-orange); color:#fff; padding:22px 20px;
+  }
+  header h1{margin:0 0 4px 0; font-size:19px;}
+  header p{margin:0; font-size:13px; opacity:.9;}
+  .section{padding:20px;}
+  .section h2{
+    font-size:15px; border-left:4px solid var(--hoban-orange);
+    padding-left:8px; margin:0 0 14px 0;
+  }
+  label{display:block; font-size:13px; font-weight:bold; margin:12px 0 4px;}
+  input, select{
+    width:100%; padding:10px; border:1px solid var(--border); border-radius:6px;
+    font-size:14px;
+  }
+  .row2{display:flex; gap:10px;}
+  .row2 > div{flex:1;}
+  .slot-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:6px;
+  }
+  .slot-btn{
+    padding:10px 4px; border:1px solid var(--border); border-radius:6px;
+    background:#fff; font-size:13px; cursor:pointer; text-align:center;
+  }
+  .slot-btn.selected{background:var(--hoban-orange); color:#fff; border-color:var(--hoban-orange);}
+  .slot-btn:disabled{background:#eee;color:#aaa;cursor:not-allowed;}
+  .date-group{margin-bottom:14px;}
+  .date-group h3{font-size:14px; margin:14px 0 6px; color:#555;}
+  .agree{display:flex; align-items:center; gap:8px; margin:10px 0; font-size:13px;}
+  .agree input{width:auto;}
+  .file-hint{font-size:12px; color:#888; margin-top:4px;}
+  button.submit{
+    width:100%; padding:14px; background:var(--hoban-orange); color:#fff;
+    border:none; border-radius:8px; font-size:16px; font-weight:bold; margin-top:20px; cursor:pointer;
+  }
+  button.submit:disabled{background:#ccc;}
+  .notice{
+    background:#fff7ef; border:1px solid #ffd8b0; border-radius:8px; padding:12px 14px;
+    font-size:12.5px; line-height:1.6; margin:0 20px 10px;
+  }
+  #result{padding:40px 20px; text-align:center;}
+  #result h2{color:var(--hoban-orange);}
+  .loading{text-align:center; padding:20px; color:#888; font-size:13px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>부부 공동명의 변경(분양권 전매신청) 예약</h1>
+    <p>인천 검단신도시 AB13블록 호반써밋Ⅲ</p>
+    <p style="margin-top:8px;"><a href="guide.html" style="color:#fff;text-decoration:underline;font-size:13px;">▶ 안내문/절차 안내 보기 및 PDF 다운로드</a></p>
+    <p style="margin-top:4px;"><a href="check.html" style="color:#fff;text-decoration:underline;font-size:13px;">▶ 이미 신청하셨나요? 접수확인 하기</a></p>
+  </header>
+
+  <div class="notice">
+    ※ 본 예약은 <b>LH 동의하에 진행하는 부부 공동명의 변경</b> 신청 접수입니다.<br>
+    ※ 분양대금 연체세대는 진행이 불가합니다.<br>
+    ※ 신청서 접수 후 반드시 견본주택 현장 방문 및 서류 제출이 필요합니다. (사전 미제출시 신청 불가)<br>
+    ※ 첨부파일: 가족관계증명서(상세) 1부를 준비해주세요.
+  </div>
+
+  <form id="resvForm">
+    <div class="section">
+      <h2>1. 희망 일시 선택</h2>
+      <div id="slotArea" class="loading">예약 가능 일정을 불러오는 중...</div>
+    </div>
+
+    <div class="section">
+      <h2>2. 부동산의 표시</h2>
+      <div class="row2">
+        <div><label>동</label><input type="text" id="dong" placeholder="예: 2101" required></div>
+        <div><label>호</label><input type="text" id="ho" placeholder="예: 1502" required></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>3. 양도인 (현 계약자)</h2>
+      <label>성명</label><input type="text" id="t_name" required>
+      <label>생년월일</label><input type="text" id="t_birth" placeholder="YYYY-MM-DD" required>
+      <label>연락처</label><input type="text" id="t_phone" placeholder="010-0000-0000" required>
+      <label>주소</label><input type="text" id="t_addr" required>
+    </div>
+
+    <div class="section">
+      <h2>4. 양수예정인 (배우자)</h2>
+      <label>성명</label><input type="text" id="e_name" required>
+      <label>생년월일</label><input type="text" id="e_birth" placeholder="YYYY-MM-DD" required>
+      <label>연락처</label><input type="text" id="e_phone" placeholder="010-0000-0000" required>
+      <label>주소</label><input type="text" id="e_addr" placeholder="양도인과 동일시 동일하게 입력" required>
+    </div>
+
+    <div class="section">
+      <h2>5. 첨부서류</h2>
+      <label>가족관계증명서(상세)</label>
+      <input type="file" id="file" accept=".pdf,.jpg,.jpeg,.png" required>
+      <div class="file-hint">PDF 또는 이미지 파일, 10MB 이하</div>
+    </div>
+
+    <div class="section">
+      <h2>6. 개인정보 수집·이용 동의</h2>
+      <div class="agree">
+        <input type="checkbox" id="agree_t" required> <label style="margin:0;font-weight:normal;">양도인 개인정보 수집/이용에 동의합니다.</label>
+      </div>
+      <div class="agree">
+        <input type="checkbox" id="agree_e" required> <label style="margin:0;font-weight:normal;">양수인 개인정보 수집/이용에 동의합니다.</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <button type="submit" class="submit" id="submitBtn">전매신청서 접수하기</button>
+    </div>
+  </form>
+
+  <div id="result" style="display:none;"></div>
+</div>
+
+<script>
+// ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요
+const API_URL = 'https://script.google.com/macros/s/AKfycbxxiRb7USiEmsyM_49Tx9hE4vWYbGUVY3lk-gXCo-wTh7Iozff1NtYBog3SGHksjV2O/exec';
+
+let slots = [];
+let selectedSlotId = null;
+
+async function loadSlots(){
+  const area = document.getElementById('slotArea');
+  try{
+    const res = await fetch(API_URL + '?action=getSlots');
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.error || '조회 실패');
+    slots = json.data;
+    renderSlots();
+  }catch(err){
+    area.innerHTML = '예약 가능 일정을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.<br><span style="font-size:11px;color:#c00;">'+err+'</span>';
+  }
+}
+
+function renderSlots(){
+  const area = document.getElementById('slotArea');
+  if(slots.length === 0){
+    area.innerHTML = '현재 예약 가능한 일정이 없습니다. 문의처(1670-1331)로 연락 바랍니다.';
+    return;
+  }
+  const byDate = {};
+  slots.forEach(s => {
+    (byDate[s.date] = byDate[s.date] || []).push(s);
+  });
+
+  let html = '';
+  Object.keys(byDate).sort().forEach(date => {
+    const wd = byDate[date][0].weekday;
+    html += `<div class="date-group"><h3>${date} (${wd})</h3><div class="slot-grid">`;
+    byDate[date].forEach(s => {
+      const full = s.remaining <= 0;
+      html += `<button type="button" class="slot-btn" data-id="${s.id}" ${full ? 'disabled' : ''}>${s.start}${full ? '<br>마감' : ''}</button>`;
+    });
+    html += `</div></div>`;
+  });
+  area.innerHTML = html;
+
+  document.querySelectorAll('.slot-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedSlotId = btn.dataset.id;
+    });
+  });
+}
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('resvForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if(!selectedSlotId){
+    alert('희망 방문 일시를 선택해주세요.');
+    return;
+  }
+  const fileInput = document.getElementById('file');
+  if(!fileInput.files.length){
+    alert('가족관계증명서 파일을 첨부해주세요.');
+    return;
+  }
+  const file = fileInput.files[0];
+  if(file.size > 10 * 1024 * 1024){
+    alert('파일 크기는 10MB 이하로 첨부해주세요.');
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '접수 처리 중...';
+
+  try{
+    const fileData = await fileToBase64(file);
+    const payload = {
+      action: 'reserve',
+      slotId: selectedSlotId,
+      dong: document.getElementById('dong').value,
+      ho: document.getElementById('ho').value,
+      transferor: {
+        name: document.getElementById('t_name').value,
+        birth: document.getElementById('t_birth').value,
+        phone: document.getElementById('t_phone').value,
+        addr: document.getElementById('t_addr').value
+      },
+      transferee: {
+        name: document.getElementById('e_name').value,
+        birth: document.getElementById('e_birth').value,
+        phone: document.getElementById('e_phone').value,
+        addr: document.getElementById('e_addr').value
+      },
+      agreeTransferor: document.getElementById('agree_t').checked,
+      agreeTransferee: document.getElementById('agree_e').checked,
+      fileName: file.name,
+      mimeType: file.type,
+      fileData
+    };
+
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // CORS preflight 회피
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+
+    if(json.ok){
+      document.getElementById('resvForm').style.display = 'none';
+      const result = document.getElementById('result');
+      result.style.display = 'block';
+      result.innerHTML = `
+        <h2>접수가 완료되었습니다</h2>
+        <p>예약일시: <b>${json.data.date} ${json.data.time}</b></p>
+        <p style="font-size:13px;color:#666;">접수번호: ${json.data.reservationId}</p>
+        <p style="font-size:13px;color:#666;margin-top:20px;">
+          예약일에 견본주택(경기도 김포시 사우동 547-8)으로 방문하시어<br>
+          관련 서류를 제출해주시기 바랍니다.<br>
+          문의: 1670-1331
+        </p>`;
+    } else {
+      alert('접수 실패: ' + (json.error || '알 수 없는 오류'));
+      btn.disabled = false;
+      btn.textContent = '전매신청서 접수하기';
+    }
+  }catch(err){
+    alert('접수 중 오류가 발생했습니다: ' + err);
+    btn.disabled = false;
+    btn.textContent = '전매신청서 접수하기';
+  }
+});
+
+loadSlots();
+</script>
+</body>
+</html>

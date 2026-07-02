@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전매동의 신청서 접수확인 - 인천검단 AB13 호반써밋Ⅲ</title>
+<style>
+  :root{ --hoban-orange:#e85c0d; --gray-bg:#f5f6f8; --border:#dcdfe4; --text:#222; }
+  *{box-sizing:border-box;}
+  body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; background:var(--gray-bg); margin:0; padding:0; color:var(--text);}
+  .wrap{max-width:520px;margin:0 auto;background:#fff;min-height:100vh;}
+  header{background:var(--hoban-orange); color:#fff; padding:22px 20px;}
+  header h1{margin:0 0 4px 0; font-size:19px;}
+  header p{margin:0; font-size:13px; opacity:.9;}
+  header a{color:#fff; font-size:13px;}
+  .section{padding:20px;}
+  label{display:block; font-size:13px; font-weight:bold; margin:12px 0 4px;}
+  input{width:100%; padding:10px; border:1px solid var(--border); border-radius:6px; font-size:14px;}
+  .row2{display:flex; gap:10px;}
+  .row2 > div{flex:1;}
+  .hint{font-size:12px;color:#888;margin-top:4px;}
+  button.submit{
+    width:100%; padding:14px; background:var(--hoban-orange); color:#fff;
+    border:none; border-radius:8px; font-size:16px; font-weight:bold; margin-top:20px; cursor:pointer;
+  }
+  button.submit:disabled{background:#ccc;}
+  .result-card{
+    border:1px solid var(--border); border-radius:8px; padding:16px; margin-top:16px;
+  }
+  .result-card .badge{
+    display:inline-block; padding:4px 10px; border-radius:20px; font-size:12.5px; font-weight:bold;
+    background:#fff2e6; color:var(--hoban-orange); margin-bottom:8px;
+  }
+  .result-card table{width:100%; font-size:13.5px; border-collapse:collapse;}
+  .result-card td{padding:5px 0;}
+  .result-card td:first-child{color:#888; width:36%;}
+  .empty-msg{
+    margin-top:16px; padding:16px; background:#f7f7f7; border-radius:8px; font-size:13px; color:#666; text-align:center;
+  }
+  .msg{font-size:12.5px; margin-top:8px;}
+  .msg.error{color:#c0392b;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>전매동의 신청서 접수확인</h1>
+    <p>인천 검단신도시 AB13블록 호반써밋Ⅲ</p>
+    <p style="margin-top:8px;"><a href="index.html">◀ 예약 신청 페이지로</a> &nbsp;|&nbsp; <a href="guide.html">안내문 보기</a></p>
+  </header>
+
+  <div class="section">
+    <p class="hint">※ 전매동의 신청서를 접수하신 <b>현재 계약자(양도인)</b> 기준으로 조회됩니다. 동/호, 계약자 성명, 휴대폰 번호 뒷자리 4자리를 정확히 입력해주세요.</p>
+
+    <form id="checkForm">
+      <div class="row2">
+        <div><label>동</label><input type="text" id="dong" placeholder="예: 2101" required></div>
+        <div><label>호</label><input type="text" id="ho" placeholder="예: 1502" required></div>
+      </div>
+      <label>계약자 성명 (현재 계약자 / 양도인)</label>
+      <input type="text" id="name" required>
+      <label>휴대폰 번호 뒷자리 4자리</label>
+      <input type="text" id="phoneLast4" maxlength="4" inputmode="numeric" placeholder="예: 1234" required>
+
+      <button type="submit" class="submit" id="submitBtn">접수확인</button>
+      <p class="msg error" id="errMsg"></p>
+    </form>
+
+    <div id="resultArea"></div>
+  </div>
+</div>
+
+<script>
+// ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요 (index.html / admin.html과 동일한 URL)
+const API_URL = 'https://script.google.com/macros/s/AKfycbxxiRb7USiEmsyM_49Tx9hE4vWYbGUVY3lk-gXCo-wTh7Iozff1NtYBog3SGHksjV2O/exec';
+
+document.getElementById('checkForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errMsg = document.getElementById('errMsg');
+  const resultArea = document.getElementById('resultArea');
+  const btn = document.getElementById('submitBtn');
+  errMsg.textContent = '';
+  resultArea.innerHTML = '';
+
+  const phoneLast4 = document.getElementById('phoneLast4').value.trim();
+  if(!/^[0-9]{4}$/.test(phoneLast4)){
+    errMsg.textContent = '휴대폰 뒷자리 4자리는 숫자 4자리로 입력해주세요.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '확인 중...';
+
+  try{
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'checkStatus',
+        dong: document.getElementById('dong').value.trim(),
+        ho: document.getElementById('ho').value.trim(),
+        name: document.getElementById('name').value.trim(),
+        phoneLast4
+      })
+    });
+    const json = await res.json();
+
+    if(!json.ok){
+      errMsg.textContent = json.error || '조회 중 오류가 발생했습니다.';
+    } else if(json.data.length === 0){
+      resultArea.innerHTML = `<div class="empty-msg">
+        일치하는 접수 내역을 찾을 수 없습니다.<br>
+        입력하신 정보를 다시 확인해주시거나, 문의처(1670-1331)로 연락 바랍니다.
+      </div>`;
+    } else {
+      resultArea.innerHTML = json.data.map(r => `
+        <div class="result-card">
+          <span class="badge">${r.status || '접수완료'}</span>
+          <table>
+            <tr><td>동/호</td><td>${r.dong}동 ${r.ho}호</td></tr>
+            <tr><td>접수일시</td><td>${new Date(r.submittedAt).toLocaleString('ko-KR')}</td></tr>
+            <tr><td>방문 예정일시</td><td>${r.visitDate} ${r.visitTime}</td></tr>
+            <tr><td>접수번호</td><td style="font-size:11.5px;color:#999;">${r.reservationId}</td></tr>
+          </table>
+        </div>
+      `).join('');
+    }
+  }catch(err){
+    errMsg.textContent = '조회 중 오류가 발생했습니다: ' + err;
+  }finally{
+    btn.disabled = false;
+    btn.textContent = '접수확인';
+  }
+});
+</script>
+</body>
+</html>

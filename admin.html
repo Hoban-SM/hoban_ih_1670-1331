@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 - 전매신청 예약 관리</title>
+<style>
+  :root{ --hoban-orange:#e85c0d; --border:#dcdfe4; }
+  *{box-sizing:border-box;}
+  body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; background:#f5f6f8; margin:0; color:#222;}
+  .wrap{max-width:960px;margin:0 auto;padding:20px;}
+  header{background:var(--hoban-orange);color:#fff;padding:18px 20px;border-radius:8px;margin-bottom:20px;}
+  header h1{margin:0;font-size:18px;}
+  .card{background:#fff;border-radius:8px;padding:20px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .card h2{font-size:15px;border-left:4px solid var(--hoban-orange);padding-left:8px;margin:0 0 14px;}
+  label{display:block;font-size:13px;font-weight:bold;margin:10px 0 4px;}
+  input, select{width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;}
+  .row > div{flex:1;min-width:140px;}
+  button{background:var(--hoban-orange);color:#fff;border:none;border-radius:6px;padding:10px 16px;font-size:14px;cursor:pointer;margin-top:14px;}
+  button.secondary{background:#888;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px;}
+  th, td{border:1px solid var(--border);padding:6px 8px;text-align:center;}
+  th{background:#fafafa;}
+  .del-btn{background:#c0392b;padding:4px 8px;font-size:12px;margin:0;}
+  #loginScreen{max-width:360px;margin:80px auto;}
+  a.file-link{color:var(--hoban-orange);}
+  .status-open{color:#1a7a1a;font-weight:bold;}
+  .status-closed{color:#c0392b;font-weight:bold;}
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="card">
+  <h2>관리자 로그인</h2>
+  <label>비밀번호</label>
+  <input type="password" id="pw">
+  <button onclick="login()">로그인</button>
+  <p id="loginMsg" style="color:#c00;font-size:12px;"></p>
+</div>
+
+<div class="wrap" id="mainScreen" style="display:none;">
+  <header><h1>전매신청 예약 관리 - 인천검단 AB13 호반써밋Ⅲ</h1></header>
+
+  <div class="card">
+    <h2>예약 가능 일정 생성 (30분 단위 자동 생성)</h2>
+    <div class="row">
+      <div><label>시작일</label><input type="date" id="dateFrom"></div>
+      <div><label>종료일</label><input type="date" id="dateTo"></div>
+      <div>
+        <label>요일 제한(선택)</label>
+        <select id="onlyWeekday">
+          <option value="">전체</option>
+          <option value="월">월요일만</option>
+          <option value="화">화요일만</option>
+          <option value="수">수요일만</option>
+          <option value="목">목요일만</option>
+          <option value="금">금요일만</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div><label>업무 시작시간</label><input type="time" id="startTime" value="10:00"></div>
+      <div><label>업무 종료시간</label><input type="time" id="endTime" value="16:00"></div>
+    </div>
+    <div class="row">
+      <div><label>점심 시작</label><input type="time" id="lunchStart" value="11:30"></div>
+      <div><label>점심 종료</label><input type="time" id="lunchEnd" value="13:00"></div>
+      <div><label>슬롯당 정원(예약 가능 인원)</label><input type="number" id="capacity" value="1" min="1"></div>
+    </div>
+    <button onclick="addSlots()">일정 생성</button>
+    <span id="addMsg" style="font-size:12px;margin-left:10px;"></span>
+  </div>
+
+  <div class="card">
+    <h2>등록된 일정 목록</h2>
+    <button class="secondary" onclick="loadSlots()">새로고침</button>
+    <table id="slotTable">
+      <thead><tr><th>날짜</th><th>요일</th><th>시간</th><th>정원</th><th>예약</th><th>상태</th><th>삭제</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>접수된 신청 내역</h2>
+    <button class="secondary" onclick="loadReservations()">새로고침</button>
+    <p style="font-size:12px;color:#888;">※ 상태값은 접수확인 페이지에 그대로 노출됩니다. (예: 접수완료 → 서류심사중 → LH동의완료 → 계약완료)</p>
+    <div style="overflow-x:auto;">
+    <table id="resvTable">
+      <thead><tr>
+        <th>접수일시</th><th>예약일시</th><th>동/호</th>
+        <th>양도인</th><th>양수인(배우자)</th><th>첨부파일</th><th>상태</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요
+const API_URL = 'https://script.google.com/macros/s/AKfycbxxiRb7USiEmsyM_49Tx9hE4vWYbGUVY3lk-gXCo-wTh7Iozff1NtYBog3SGHksjV2O/exec';
+let PW = '';
+
+async function apiPost(action, extra){
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(Object.assign({ action, password: PW }, extra || {}))
+  });
+  return res.json();
+}
+
+async function login(){
+  const pw = document.getElementById('pw').value;
+  try{
+    const res = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'adminLogin', password: pw })
+    });
+    const json = await res.json();
+    if(json.ok){
+      PW = pw;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainScreen').style.display = 'block';
+      loadSlots();
+      loadReservations();
+    }else{
+      document.getElementById('loginMsg').textContent = '비밀번호가 올바르지 않습니다.';
+    }
+  }catch(err){
+    document.getElementById('loginMsg').textContent = '로그인 오류: ' + err;
+  }
+}
+
+async function addSlots(){
+  const msg = document.getElementById('addMsg');
+  msg.textContent = '생성 중...';
+  const json = await apiPost('addSlots', {
+    dateFrom: document.getElementById('dateFrom').value,
+    dateTo: document.getElementById('dateTo').value,
+    onlyWeekday: document.getElementById('onlyWeekday').value,
+    startTime: document.getElementById('startTime').value,
+    endTime: document.getElementById('endTime').value,
+    lunchStart: document.getElementById('lunchStart').value,
+    lunchEnd: document.getElementById('lunchEnd').value,
+    capacity: document.getElementById('capacity').value
+  });
+  if(json.ok){
+    msg.textContent = `${json.data.length}개 슬롯 생성 완료`;
+    loadSlots();
+  }else{
+    msg.textContent = '생성 실패: ' + json.error;
+  }
+}
+
+async function loadSlots(){
+  const json = await apiPost('getAllSlots');
+  const tbody = document.querySelector('#slotTable tbody');
+  tbody.innerHTML = '';
+  if(!json.ok){ tbody.innerHTML = `<tr><td colspan="7">불러오기 실패: ${json.error}</td></tr>`; return; }
+  json.data.sort((a,b)=> (a.date+a.start).localeCompare(b.date+b.start));
+  json.data.forEach(s => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${s.date}</td><td>${s.weekday}</td><td>${s.start}~${s.end}</td>
+      <td>${s.capacity}</td><td>${s.reserved}</td>
+      <td class="${s.reserved < s.capacity ? 'status-open' : 'status-closed'}">${s.reserved < s.capacity ? '예약가능' : '마감'}</td>
+      <td><button class="del-btn" onclick="deleteSlot('${s.id}')">삭제</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function deleteSlot(id){
+  if(!confirm('이 일정을 삭제하시겠습니까?')) return;
+  const json = await apiPost('deleteSlot', { id });
+  if(json.ok) loadSlots();
+  else alert('삭제 실패: ' + json.error);
+}
+
+async function loadReservations(){
+  const json = await apiPost('getReservations');
+  const tbody = document.querySelector('#resvTable tbody');
+  tbody.innerHTML = '';
+  if(!json.ok){ tbody.innerHTML = `<tr><td colspan="7">불러오기 실패: ${json.error}</td></tr>`; return; }
+  const STATUS_OPTIONS = ['접수완료','서류심사중','LH동의완료','계약완료','반려'];
+  json.data.forEach(r => {
+    const id = r['예약ID'];
+    const cur = r['상태'] || '접수완료';
+    const options = STATUS_OPTIONS.map(s => `<option value="${s}" ${s===cur?'selected':''}>${s}</option>`).join('');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${new Date(r['접수일시']).toLocaleString('ko-KR')}</td>
+      <td>${r['예약일']} ${r['예약시간']}</td>
+      <td>${r['동']}동 ${r['호']}호</td>
+      <td>${r['양도인_성명']}<br>${r['양도인_연락처']}</td>
+      <td>${r['양수인_성명']}<br>${r['양수인_연락처']}</td>
+      <td>${r['첨부파일링크'] ? `<a class="file-link" href="${r['첨부파일링크']}" target="_blank">보기</a>` : '-'}</td>
+      <td><select onchange="updateStatus('${id}', this.value)">${options}</select></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function updateStatus(id, status){
+  const json = await apiPost('updateStatus', { reservationId: id, status });
+  if(!json.ok) alert('상태 변경 실패: ' + json.error);
+}
+</script>
+</body>
+</html>
