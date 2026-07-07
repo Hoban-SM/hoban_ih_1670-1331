@@ -89,8 +89,16 @@
     </div>
     <p style="font-size:12px;color:#888;margin:4px 0 14px;">이미 만들어진 일정을 뒤늦게 공휴일 등으로 통째로 제외하고 싶을 때 사용합니다. (예약자가 있는 시간대는 안전을 위해 삭제되지 않습니다)</p>
 
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+      <button class="del-btn" style="margin-top:0;padding:9px 14px;" onclick="deleteSelected()">선택 항목 삭제</button>
+      <span id="selectMsg" style="font-size:12px;color:#888;"></span>
+    </div>
+
     <table id="slotTable">
-      <thead><tr><th>날짜</th><th>요일</th><th>시간</th><th>정원</th><th>예약</th><th>상태</th><th>삭제</th></tr></thead>
+      <thead><tr>
+        <th><input type="checkbox" id="selectAllSlots" onclick="toggleAllSlots(this)"></th>
+        <th>날짜</th><th>요일</th><th>시간</th><th>정원</th><th>예약</th><th>상태</th><th>삭제</th>
+      </tr></thead>
       <tbody></tbody>
     </table>
   </div>
@@ -103,7 +111,9 @@
     <table id="resvTable">
       <thead><tr>
         <th>접수일시</th><th>예약일시</th><th>동/호</th>
-        <th>양도인</th><th>양수인(배우자)</th><th>첨부파일</th><th>상태</th>
+        <th>양도인</th><th>양수인(배우자)</th>
+        <th>전매신청서</th><th>가족관계증명서</th><th>개인정보동의</th>
+        <th>상태</th>
       </tr></thead>
       <tbody></tbody>
     </table>
@@ -113,7 +123,7 @@
 
 <script>
 // ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요
-const API_URL = 'https://script.google.com/macros/s/AKfycbxxiRb7USiEmsyM_49Tx9hE4vWYbGUVY3lk-gXCo-wTh7Iozff1NtYBog3SGHksjV2O/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 let PW = '';
 
 async function apiPost(action, extra){
@@ -191,17 +201,42 @@ async function loadSlots(){
   const json = await apiPost('getAllSlots');
   const tbody = document.querySelector('#slotTable tbody');
   tbody.innerHTML = '';
-  if(!json.ok){ tbody.innerHTML = `<tr><td colspan="7">불러오기 실패: ${json.error}</td></tr>`; return; }
+  document.getElementById('selectAllSlots').checked = false;
+  if(!json.ok){ tbody.innerHTML = `<tr><td colspan="8">불러오기 실패: ${json.error}</td></tr>`; return; }
   json.data.sort((a,b)=> (a.date+a.start).localeCompare(b.date+b.start));
   json.data.forEach(s => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
+      <td><input type="checkbox" class="slot-check" value="${s.id}"></td>
       <td>${s.date}</td><td>${s.weekday}</td><td>${s.start}~${s.end}</td>
       <td>${s.capacity}</td><td>${s.reserved}</td>
       <td class="${s.reserved < s.capacity ? 'status-open' : 'status-closed'}">${s.reserved < s.capacity ? '예약가능' : '마감'}</td>
       <td><button class="del-btn" onclick="deleteSlot('${s.id}')">삭제</button></td>`;
     tbody.appendChild(tr);
   });
+}
+
+function toggleAllSlots(checkbox){
+  document.querySelectorAll('.slot-check').forEach(c => c.checked = checkbox.checked);
+}
+
+async function deleteSelected(){
+  const ids = Array.from(document.querySelectorAll('.slot-check:checked')).map(c => c.value);
+  const msg = document.getElementById('selectMsg');
+  if(ids.length === 0){
+    msg.textContent = '삭제할 항목을 먼저 선택해주세요.';
+    return;
+  }
+  if(!confirm(`선택한 ${ids.length}개 일정을 삭제하시겠습니까? (예약자가 있는 시간대는 제외됩니다)`)) return;
+
+  const json = await apiPost('deleteSlotsBulk', { ids });
+  if(json.ok){
+    const d = json.data;
+    msg.textContent = `${d.deleted}개 삭제 완료` + (d.skipped > 0 ? ` / ${d.skipped}개는 이미 예약자가 있어 건너뜀` : '');
+    loadSlots();
+  }else{
+    msg.textContent = '삭제 실패: ' + json.error;
+  }
 }
 
 async function deleteSlot(id){
@@ -215,8 +250,9 @@ async function loadReservations(){
   const json = await apiPost('getReservations');
   const tbody = document.querySelector('#resvTable tbody');
   tbody.innerHTML = '';
-  if(!json.ok){ tbody.innerHTML = `<tr><td colspan="7">불러오기 실패: ${json.error}</td></tr>`; return; }
+  if(!json.ok){ tbody.innerHTML = `<tr><td colspan="9">불러오기 실패: ${json.error}</td></tr>`; return; }
   const STATUS_OPTIONS = ['접수완료','서류심사중','LH동의완료','계약완료','반려'];
+  const fileLink = (url) => url ? `<a class="file-link" href="${url}" target="_blank">보기</a>` : '-';
   json.data.forEach(r => {
     const id = r['예약ID'];
     const cur = r['상태'] || '접수완료';
@@ -228,7 +264,9 @@ async function loadReservations(){
       <td>${r['동']}동 ${r['호']}호</td>
       <td>${r['양도인_성명']}<br>${r['양도인_연락처']}</td>
       <td>${r['양수인_성명']}<br>${r['양수인_연락처']}</td>
-      <td>${r['첨부파일링크'] ? `<a class="file-link" href="${r['첨부파일링크']}" target="_blank">보기</a>` : '-'}</td>
+      <td>${fileLink(r['전매신청서_링크'])}</td>
+      <td>${fileLink(r['가족관계증명서_링크'])}</td>
+      <td style="font-size:11.5px;">수집이용: ${r['개인정보동의_수집이용'] || '-'}<br>제3자제공: ${r['개인정보동의_제3자제공'] || '-'}<br>유의사항: ${r['개인정보동의_유의사항확인'] || '-'}</td>
       <td><select onchange="updateStatus('${id}', this.value)">${options}</select></td>`;
     tbody.appendChild(tr);
   });
