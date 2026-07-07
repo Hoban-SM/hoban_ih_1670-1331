@@ -61,6 +61,60 @@
   #result{padding:40px 20px; text-align:center;}
   #result h2{color:var(--hoban-orange);}
   .loading{text-align:center; padding:20px; color:#888; font-size:13px;}
+
+  /* 달력 */
+  .cal-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .cal-header button{
+    width:34px; height:34px; border:1px solid var(--border); background:#fff; border-radius:6px;
+    font-size:16px; cursor:pointer; color:#555;
+  }
+  .cal-header button:disabled{color:#ccc; cursor:not-allowed;}
+  .cal-header span{font-size:16px; font-weight:bold;}
+  .cal-weekdays{
+    display:grid; grid-template-columns:repeat(7,1fr); text-align:center;
+    font-size:13px; color:#999; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid var(--border);
+  }
+  .cal-weekdays .sun{color:#e5484d;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); row-gap:8px;}
+  .cal-cell{
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center; position:relative;
+  }
+  .cal-cell.empty{visibility:hidden;}
+  .cal-cell .num{
+    width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+    border-radius:50%; font-size:15px; color:#222;
+  }
+  .cal-cell.sun .num{color:#e5484d;}
+  .cal-cell.unavailable .num{color:#ccc;}
+  .cal-cell.available{cursor:pointer;}
+  .cal-cell.available .num{background:var(--hoban-orange); color:#fff; font-weight:bold;}
+  .cal-cell.available:hover .num{background:#c94d0a;}
+  .cal-cell.selected .num{background:#1a3a5c; color:#fff; font-weight:bold;}
+  .cal-legend{display:flex; gap:16px; margin-top:14px; font-size:12px; color:#666;}
+  .cal-legend span{display:inline-flex; align-items:center; gap:6px;}
+  .cal-legend i{width:14px; height:14px; border-radius:50%; display:inline-block;}
+  .cal-legend i.legend-available{background:var(--hoban-orange);}
+  .cal-legend i.legend-unavailable{background:#e5e5e5;}
+  #timeSlotArea{margin-top:20px; padding-top:16px; border-top:1px dashed var(--border);}
+  #timeSlotArea h3{font-size:14px; margin:0 0 10px;}
+
+  /* 개인정보 동의 */
+  .consent-subtitle{font-size:13.5px; font-weight:bold; margin:18px 0 8px;}
+  .consent-subtitle:first-child{margin-top:0;}
+  .consent-subtitle .required{color:var(--hoban-orange); font-size:12px; font-weight:normal;}
+  table.consent-table{width:100%; border-collapse:collapse; font-size:12.5px; margin-bottom:12px;}
+  table.consent-table th, table.consent-table td{border:1px solid var(--border); padding:9px 10px; text-align:left; vertical-align:top;}
+  table.consent-table thead th{background:#fafafa; font-weight:bold;}
+  table.consent-table tbody th{background:#fafafa; width:32%; font-weight:bold; white-space:nowrap;}
+  table.consent-table .sub-note{font-size:11px; color:#999; display:block; margin-top:2px;}
+  .consent-check{display:flex; align-items:flex-start; gap:8px; margin:10px 0; font-size:13px;}
+  .consent-check input{width:auto; margin-top:3px;}
+  .consent-check .req-tag{color:var(--hoban-orange); font-weight:bold;}
+  .consent-check .sub-note{display:block; font-size:11.5px; color:#888; margin-top:3px; font-weight:normal;}
+  .consent-notice{
+    background:#fff7ef; border:1px solid #ffd8b0; border-radius:8px; padding:12px 14px;
+    font-size:12px; line-height:1.7; color:#7a5a3a; margin-top:14px;
+  }
 </style>
 </head>
 <body>
@@ -76,7 +130,7 @@
     ※ 본 예약은 <b>LH 동의하에 진행하는 부부 공동명의 변경</b> 신청 접수입니다.<br>
     ※ 분양대금 연체세대는 진행이 불가합니다.<br>
     ※ 신청서 접수 후 반드시 견본주택 현장 방문 및 서류 제출이 필요합니다. (사전 미제출시 신청 불가)<br>
-    ※ 첨부파일: 가족관계증명서(상세) 1부를 준비해주세요.
+    ※ 첨부파일: 분양권 전매신청서, 가족관계증명서(상세) 각 1부를 준비해주세요.
   </div>
 
   <form id="resvForm">
@@ -96,33 +150,73 @@
     <div class="section">
       <h2>3. 양도인 (현 계약자)</h2>
       <label>성명</label><input type="text" id="t_name" required>
-      <label>생년월일</label><input type="text" id="t_birth" placeholder="YYYY-MM-DD" required>
       <label>연락처</label><input type="text" id="t_phone" placeholder="010-0000-0000" required>
-      <label>주소</label><input type="text" id="t_addr" required>
     </div>
 
     <div class="section">
       <h2>4. 양수예정인 (배우자)</h2>
       <label>성명</label><input type="text" id="e_name" required>
-      <label>생년월일</label><input type="text" id="e_birth" placeholder="YYYY-MM-DD" required>
       <label>연락처</label><input type="text" id="e_phone" placeholder="010-0000-0000" required>
-      <label>주소</label><input type="text" id="e_addr" placeholder="양도인과 동일시 동일하게 입력" required>
     </div>
 
     <div class="section">
       <h2>5. 첨부서류</h2>
-      <label>가족관계증명서(상세)</label>
-      <input type="file" id="file" accept=".pdf,.jpg,.jpeg,.png" required>
+
+      <label>① 분양권 전매신청서</label>
+      <input type="file" id="file_apply" accept=".pdf,.jpg,.jpeg,.png" required>
+      <div class="file-hint">서명(또는 인감) 완료된 전매신청서 스캔본/사진, PDF 또는 이미지, 10MB 이하</div>
+
+      <label style="margin-top:18px;">② 가족관계증명서(상세)</label>
+      <input type="file" id="file_family" accept=".pdf,.jpg,.jpeg,.png" required>
       <div class="file-hint">PDF 또는 이미지 파일, 10MB 이하</div>
     </div>
 
     <div class="section">
       <h2>6. 개인정보 수집·이용 동의</h2>
-      <div class="agree">
-        <input type="checkbox" id="agree_t" required> <label style="margin:0;font-weight:normal;">양도인 개인정보 수집/이용에 동의합니다.</label>
+
+      <div class="consent-subtitle">개인정보 수집·이용 동의</div>
+      <table class="consent-table">
+        <thead><tr><th style="width:32%;">항목</th><th>내용</th></tr></thead>
+        <tbody>
+          <tr><th>수집·이용 목적</th><td>분양권 전매(부부공동명의) 신청 접수, 신청인 확인 및 연락</td></tr>
+          <tr><th>수집 항목</th><td>성명, 연락처, 생년월일, 주소, 동/호수</td></tr>
+          <tr><th>보유·이용 기간</th><td>전매 절차 완료 또는 신청 취소 후 3개월 이내 파기
+            <span class="sub-note">※ 관계 법령에 따라 보존이 필요한 경우 해당 기간 보유</span></td></tr>
+          <tr><th>거부 권리 및 불이익</th><td>동의를 거부할 권리가 있으나, 거부 시 전매신청 접수가 불가합니다.</td></tr>
+        </tbody>
+      </table>
+      <div class="consent-check">
+        <input type="checkbox" id="agree_collect" required>
+        <label style="margin:0;font-weight:normal;"><span class="req-tag">[필수]</span> 위 개인정보 수집·이용에 동의합니다.</label>
       </div>
-      <div class="agree">
-        <input type="checkbox" id="agree_e" required> <label style="margin:0;font-weight:normal;">양수인 개인정보 수집/이용에 동의합니다.</label>
+
+      <div class="consent-subtitle">개인정보 제3자 제공 동의 <span class="required">(필수)</span></div>
+      <table class="consent-table">
+        <thead><tr><th style="width:32%;">항목</th><th>내용</th></tr></thead>
+        <tbody>
+          <tr><th>제공받는 자</th><td>티에스리빙(주), ㈜호반산업, LH 인천지역본부</td></tr>
+          <tr><th>제공 목적</th><td>전매동의 심사 및 진행, 자격 검증, 관련 안내</td></tr>
+          <tr><th>제공 항목</th><td>성명, 연락처, 생년월일, 주소, 동/호수</td></tr>
+          <tr><th>보유·이용 기간</th><td>제공 목적 달성 시까지 또는 전매 절차 완료 후 3개월</td></tr>
+        </tbody>
+      </table>
+      <div class="consent-check">
+        <input type="checkbox" id="agree_thirdparty" required>
+        <label style="margin:0;font-weight:normal;"><span class="req-tag">[필수]</span> 위 개인정보 제3자 제공에 동의합니다.</label>
+      </div>
+
+      <div class="consent-check">
+        <input type="checkbox" id="agree_notice" required>
+        <label style="margin:0;font-weight:normal;">
+          <span class="req-tag">[필수]</span> 위 유의사항을 모두 확인하고 동의합니다.
+          <span class="sub-note">허위정보 입력 시 접수 취소, 명의변경 불가, 중복접수 금지 등 모든 내용에 동의함</span>
+        </label>
+      </div>
+
+      <div class="consent-notice">
+        귀하는 개인정보 수집·이용에 대한 동의를 거부할 권리가 있습니다.<br>
+        수집된 개인정보는 위 목적 이외의 용도로 이용되지 않으며, 이용 목적이 변경될 경우 별도 동의를 받겠습니다.<br>
+        개인정보 처리에 관한 문의: 티에스리빙(주) (T. 1670-1331)
       </div>
     </div>
 
@@ -136,10 +230,13 @@
 
 <script>
 // ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요
-const API_URL = 'https://script.google.com/macros/s/AKfycbxxiRb7USiEmsyM_49Tx9hE4vWYbGUVY3lk-gXCo-wTh7Iozff1NtYBog3SGHksjV2O/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
 let slots = [];
+let slotsByDate = {};
 let selectedSlotId = null;
+let selectedDate = null;
+let calYear, calMonth; // calMonth: 0-11
 
 async function loadSlots(){
   const area = document.getElementById('slotArea');
@@ -148,42 +245,134 @@ async function loadSlots(){
     const json = await res.json();
     if(!json.ok) throw new Error(json.error || '조회 실패');
     slots = json.data;
-    renderSlots();
+
+    slotsByDate = {};
+    slots.forEach(s => {
+      (slotsByDate[s.date] = slotsByDate[s.date] || []).push(s);
+    });
+
+    if(slots.length === 0){
+      area.innerHTML = '현재 예약 가능한 일정이 없습니다. 문의처(1670-1331)로 연락 바랍니다.';
+      return;
+    }
+
+    const firstDate = new Date(Object.keys(slotsByDate).sort()[0]);
+    calYear = firstDate.getFullYear();
+    calMonth = firstDate.getMonth();
+
+    area.className = '';
+    area.innerHTML = `
+      <div class="cal-header">
+        <button type="button" id="prevMonth">‹</button>
+        <span id="calMonthLabel"></span>
+        <button type="button" id="nextMonth">›</button>
+      </div>
+      <div class="cal-weekdays">
+        <div class="sun">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend">
+        <span><i class="legend-available"></i>예약 가능한 날</span>
+        <span><i class="legend-unavailable"></i>예약 불가</span>
+      </div>
+      <div id="timeSlotArea" style="display:none;">
+        <h3 id="selectedDateLabel"></h3>
+        <div class="slot-grid" id="timeSlotGrid"></div>
+      </div>
+    `;
+
+    document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
+    document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
+
+    renderCalendar();
   }catch(err){
     area.innerHTML = '예약 가능 일정을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.<br><span style="font-size:11px;color:#c00;">'+err+'</span>';
   }
 }
 
-function renderSlots(){
-  const area = document.getElementById('slotArea');
-  if(slots.length === 0){
-    area.innerHTML = '현재 예약 가능한 일정이 없습니다. 문의처(1670-1331)로 연락 바랍니다.';
-    return;
+function changeMonth(diff){
+  calMonth += diff;
+  if(calMonth < 0){ calMonth = 11; calYear--; }
+  if(calMonth > 11){ calMonth = 0; calYear++; }
+  renderCalendar();
+}
+
+function pad2_(n){ return (n < 10 ? '0' : '') + n; }
+
+function renderCalendar(){
+  const label = document.getElementById('calMonthLabel');
+  label.textContent = `${calYear}년 ${calMonth + 1}월`;
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=일
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  // 이전 달로 못 넘어가게: 오늘이 속한 달 이전은 막음
+  const prevBtn = document.getElementById('prevMonth');
+  prevBtn.disabled = (calYear < today.getFullYear()) ||
+    (calYear === today.getFullYear() && calMonth <= today.getMonth());
+
+  for(let i = 0; i < firstDay; i++){
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell empty';
+    grid.appendChild(cell);
   }
-  const byDate = {};
-  slots.forEach(s => {
-    (byDate[s.date] = byDate[s.date] || []).push(s);
-  });
 
-  let html = '';
-  Object.keys(byDate).sort().forEach(date => {
-    const wd = byDate[date][0].weekday;
-    html += `<div class="date-group"><h3>${date} (${wd})</h3><div class="slot-grid">`;
-    byDate[date].forEach(s => {
-      const full = s.remaining <= 0;
-      html += `<button type="button" class="slot-btn" data-id="${s.id}" ${full ? 'disabled' : ''}>${s.start}${full ? '<br>마감' : ''}</button>`;
-    });
-    html += `</div></div>`;
-  });
-  area.innerHTML = html;
+  for(let day = 1; day <= daysInMonth; day++){
+    const dateStr = `${calYear}-${pad2_(calMonth + 1)}-${pad2_(day)}`;
+    const dow = new Date(calYear, calMonth, day).getDay(); // 0=일요일
+    const cell = document.createElement('div');
+    cell.innerHTML = `<span class="num">${day}</span>`;
 
-  document.querySelectorAll('.slot-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      selectedSlotId = btn.dataset.id;
+    const classes = ['cal-cell'];
+    if(dow === 0) classes.push('sun');
+
+    if(slotsByDate[dateStr]){
+      classes.push('available');
+      if(dateStr === selectedDate) classes.push('selected');
+      cell.addEventListener('click', () => selectDate(dateStr));
+    } else {
+      classes.push('unavailable');
+    }
+    cell.className = classes.join(' ');
+    grid.appendChild(cell);
+  }
+}
+
+function selectDate(dateStr){
+  selectedDate = dateStr;
+  selectedSlotId = null;
+  renderCalendar();
+
+  const daySlots = slotsByDate[dateStr] || [];
+  const weekday = daySlots[0] ? daySlots[0].weekday : '';
+
+  document.getElementById('selectedDateLabel').textContent = `${dateStr} (${weekday}) 예약 가능 시간`;
+  const timeGrid = document.getElementById('timeSlotGrid');
+  timeGrid.innerHTML = '';
+
+  daySlots
+    .sort((a,b) => a.start.localeCompare(b.start))
+    .forEach(s => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'slot-btn';
+      btn.dataset.id = s.id;
+      btn.textContent = s.start;
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#timeSlotGrid .slot-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedSlotId = s.id;
+      });
+      timeGrid.appendChild(btn);
     });
-  });
+
+  document.getElementById('timeSlotArea').style.display = 'block';
 }
 
 function fileToBase64(file){
@@ -201,15 +390,22 @@ document.getElementById('resvForm').addEventListener('submit', async (e) => {
     alert('희망 방문 일시를 선택해주세요.');
     return;
   }
-  const fileInput = document.getElementById('file');
-  if(!fileInput.files.length){
-    alert('가족관계증명서 파일을 첨부해주세요.');
-    return;
-  }
-  const file = fileInput.files[0];
-  if(file.size > 10 * 1024 * 1024){
-    alert('파일 크기는 10MB 이하로 첨부해주세요.');
-    return;
+
+  const fileFields = [
+    { id: 'file_apply', label: '분양권 전매신청서' },
+    { id: 'file_family', label: '가족관계증명서' }
+  ];
+
+  for(const f of fileFields){
+    const input = document.getElementById(f.id);
+    if(!input.files.length){
+      alert(`${f.label} 파일을 첨부해주세요.`);
+      return;
+    }
+    if(input.files[0].size > 10 * 1024 * 1024){
+      alert(`${f.label} 파일 크기는 10MB 이하로 첨부해주세요.`);
+      return;
+    }
   }
 
   const btn = document.getElementById('submitBtn');
@@ -217,7 +413,12 @@ document.getElementById('resvForm').addEventListener('submit', async (e) => {
   btn.textContent = '접수 처리 중...';
 
   try{
-    const fileData = await fileToBase64(file);
+    const buildFilePayload = async (id) => {
+      const file = document.getElementById(id).files[0];
+      const fileData = await fileToBase64(file);
+      return { fileName: file.name, mimeType: file.type, fileData };
+    };
+
     const payload = {
       action: 'reserve',
       slotId: selectedSlotId,
@@ -225,21 +426,19 @@ document.getElementById('resvForm').addEventListener('submit', async (e) => {
       ho: document.getElementById('ho').value,
       transferor: {
         name: document.getElementById('t_name').value,
-        birth: document.getElementById('t_birth').value,
-        phone: document.getElementById('t_phone').value,
-        addr: document.getElementById('t_addr').value
+        phone: document.getElementById('t_phone').value
       },
       transferee: {
         name: document.getElementById('e_name').value,
-        birth: document.getElementById('e_birth').value,
-        phone: document.getElementById('e_phone').value,
-        addr: document.getElementById('e_addr').value
+        phone: document.getElementById('e_phone').value
       },
-      agreeTransferor: document.getElementById('agree_t').checked,
-      agreeTransferee: document.getElementById('agree_e').checked,
-      fileName: file.name,
-      mimeType: file.type,
-      fileData
+      agreeCollect: document.getElementById('agree_collect').checked,
+      agreeThirdParty: document.getElementById('agree_thirdparty').checked,
+      agreeNotice: document.getElementById('agree_notice').checked,
+      files: {
+        apply: await buildFilePayload('file_apply'),
+        family: await buildFilePayload('file_family')
+      }
     };
 
     const res = await fetch(API_URL, {
