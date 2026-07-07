@@ -40,7 +40,10 @@
 </div>
 
 <div class="wrap" id="mainScreen" style="display:none;">
-  <header><h1>전매신청 예약 관리 - 인천검단 AB13 호반써밋Ⅲ</h1></header>
+  <header style="display:flex;align-items:center;justify-content:space-between;">
+    <h1>전매신청 예약 관리 - 인천검단 AB13 호반써밋Ⅲ</h1>
+    <button onclick="logout()" style="background:#fff;color:#e85c0d;border:1px solid #fff;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:bold;cursor:pointer;">로그아웃</button>
+  </header>
 
   <div class="card">
     <h2>예약 가능 일정 생성 (30분 단위 자동 생성)</h2>
@@ -123,7 +126,7 @@
 
 <script>
 // ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요
-const API_URL = 'https://script.google.com/macros/s/AKfycbxxiRb7USiEmsyM_49Tx9hE4vWYbGUVY3lk-gXCo-wTh7Iozff1NtYBog3SGHksjV2O/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 let PW = '';
 
 async function apiPost(action, extra){
@@ -156,6 +159,14 @@ async function login(){
   }catch(err){
     document.getElementById('loginMsg').textContent = '로그인 오류: ' + err;
   }
+}
+
+function logout(){
+  PW = '';
+  document.getElementById('pw').value = '';
+  document.getElementById('loginMsg').textContent = '';
+  document.getElementById('mainScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'block';
 }
 
 async function addSlots(){
