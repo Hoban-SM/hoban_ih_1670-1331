@@ -90,11 +90,18 @@
   .cal-cell.available .num{background:var(--hoban-orange); color:#fff; font-weight:bold;}
   .cal-cell.available:hover .num{background:#c94d0a;}
   .cal-cell.selected .num{background:#1a3a5c; color:#fff; font-weight:bold;}
-  .cal-legend{display:flex; gap:16px; margin-top:14px; font-size:12px; color:#666;}
+  .cal-legend{display:flex; gap:16px; margin-top:14px; font-size:12px; color:#666; flex-wrap:wrap;}
   .cal-legend span{display:inline-flex; align-items:center; gap:6px;}
   .cal-legend i{width:14px; height:14px; border-radius:50%; display:inline-block;}
   .cal-legend i.legend-available{background:var(--hoban-orange);}
   .cal-legend i.legend-unavailable{background:#e5e5e5;}
+  .cal-legend i.legend-holiday{width:8px; height:8px; background:#e5484d;}
+  .cal-cell.holiday .num{color:#e5484d;}
+  .cal-cell .holiday-dot{
+    position:absolute; bottom:2px; left:50%; transform:translateX(-50%);
+    width:6px; height:6px; border-radius:50%; background:#e5484d;
+    box-shadow:0 0 0 1.5px #fff;
+  }
   #timeSlotArea{margin-top:20px; padding-top:16px; border-top:1px dashed var(--border);}
   #timeSlotArea h3{font-size:14px; margin:0 0 10px;}
 
@@ -230,7 +237,24 @@
 
 <script>
 // ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요
-const API_URL = 'https://script.google.com/macros/s/AKfycbxxiRb7USiEmsyM_49Tx9hE4vWYbGUVY3lk-gXCo-wTh7Iozff1NtYBog3SGHksjV2O/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+
+// 대한민국 공휴일 (2026년 기준, 필요시 목록 갱신)
+const HOLIDAYS_KR = new Set([
+  '2026-01-01', // 신정
+  '2026-02-16', '2026-02-17', '2026-02-18', // 설날 연휴
+  '2026-03-01', '2026-03-02', // 삼일절, 대체공휴일
+  '2026-05-05', // 어린이날
+  '2026-05-24', '2026-05-25', // 부처님오신날, 대체공휴일
+  '2026-06-03', // 전국동시지방선거
+  '2026-06-06', // 현충일
+  '2026-07-17', // 제헌절
+  '2026-08-15', '2026-08-17', // 광복절, 대체공휴일
+  '2026-09-24', '2026-09-25', '2026-09-26', // 추석 연휴
+  '2026-10-03', '2026-10-05', // 개천절, 대체공휴일
+  '2026-10-09', // 한글날
+  '2026-12-25' // 크리스마스
+]);
 
 let slots = [];
 let slotsByDate = {};
@@ -274,6 +298,7 @@ async function loadSlots(){
       <div class="cal-legend">
         <span><i class="legend-available"></i>예약 가능한 날</span>
         <span><i class="legend-unavailable"></i>예약 불가</span>
+        <span><i class="legend-holiday"></i>공휴일</span>
       </div>
       <div id="timeSlotArea" style="display:none;">
         <h3 id="selectedDateLabel"></h3>
@@ -326,13 +351,17 @@ function renderCalendar(){
   for(let day = 1; day <= daysInMonth; day++){
     const dateStr = `${calYear}-${pad2_(calMonth + 1)}-${pad2_(day)}`;
     const dow = new Date(calYear, calMonth, day).getDay(); // 0=일요일
+    const isHoliday = HOLIDAYS_KR.has(dateStr);
     const cell = document.createElement('div');
-    cell.innerHTML = `<span class="num">${day}</span>`;
+    cell.innerHTML = `<span class="num">${day}</span>${isHoliday ? '<span class="holiday-dot" title="공휴일"></span>' : ''}`;
 
     const classes = ['cal-cell'];
-    if(dow === 0) classes.push('sun');
+    if(dow === 0 || isHoliday) classes.push('sun');
+    if(isHoliday) classes.push('holiday');
 
-    if(slotsByDate[dateStr]){
+    const hasOpenSlot = slotsByDate[dateStr] && slotsByDate[dateStr].some(s => !s.closed);
+
+    if(hasOpenSlot){
       classes.push('available');
       if(dateStr === selectedDate) classes.push('selected');
       cell.addEventListener('click', () => selectDate(dateStr));
@@ -345,11 +374,13 @@ function renderCalendar(){
 }
 
 function selectDate(dateStr){
-  selectedDate = dateStr;
   selectedSlotId = null;
+  const daySlots = slotsByDate[dateStr] || [];
+  if(!daySlots.some(s => !s.closed)) return; // 예약 가능한 시간이 없는 날은 선택 불가
+
+  selectedDate = dateStr;
   renderCalendar();
 
-  const daySlots = slotsByDate[dateStr] || [];
   const weekday = daySlots[0] ? daySlots[0].weekday : '';
 
   document.getElementById('selectedDateLabel').textContent = `${dateStr} (${weekday}) 예약 가능 시간`;
@@ -363,12 +394,17 @@ function selectDate(dateStr){
       btn.type = 'button';
       btn.className = 'slot-btn';
       btn.dataset.id = s.id;
-      btn.textContent = s.start;
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#timeSlotGrid .slot-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        selectedSlotId = s.id;
-      });
+      if(s.closed){
+        btn.disabled = true;
+        btn.innerHTML = `${s.start}<br>마감`;
+      } else {
+        btn.textContent = s.start;
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#timeSlotGrid .slot-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedSlotId = s.id;
+        });
+      }
       timeGrid.appendChild(btn);
     });
 
