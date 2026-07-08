@@ -61,6 +61,17 @@
           <option value="금">금요일만</option>
         </select>
       </div>
+      <div>
+        <label>몇째주만(선택)</label>
+        <select id="weekOfMonth">
+          <option value="">전체</option>
+          <option value="1">첫째주</option>
+          <option value="2">둘째주</option>
+          <option value="3">셋째주</option>
+          <option value="4">넷째주</option>
+          <option value="-1">마지막주</option>
+        </select>
+      </div>
     </div>
     <div class="row">
       <div><label>업무 시작시간</label><input type="time" id="startTime" value="10:00"></div>
@@ -176,6 +187,7 @@ async function addSlots(){
     dateFrom: document.getElementById('dateFrom').value,
     dateTo: document.getElementById('dateTo').value,
     onlyWeekday: document.getElementById('onlyWeekday').value,
+    weekOfMonth: document.getElementById('weekOfMonth').value,
     startTime: document.getElementById('startTime').value,
     endTime: document.getElementById('endTime').value,
     lunchStart: document.getElementById('lunchStart').value,
