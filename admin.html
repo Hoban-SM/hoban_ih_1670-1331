@@ -17,6 +17,9 @@
   input, select{width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;}
   .row{display:flex;gap:10px;flex-wrap:wrap;}
   .row > div{flex:1;min-width:140px;}
+  .week-check-group{display:flex;gap:14px;flex-wrap:wrap;padding:8px 0;}
+  .week-check{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:normal;cursor:pointer;}
+  .week-check input{width:auto;}
   button{background:var(--hoban-orange);color:#fff;border:none;border-radius:6px;padding:10px 16px;font-size:14px;cursor:pointer;margin-top:14px;}
   button.secondary{background:#888;}
   table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px;}
@@ -61,16 +64,16 @@
           <option value="금">금요일만</option>
         </select>
       </div>
-      <div>
-        <label>몇째주만(선택)</label>
-        <select id="weekOfMonth">
-          <option value="">전체</option>
-          <option value="1">첫째주</option>
-          <option value="2">둘째주</option>
-          <option value="3">셋째주</option>
-          <option value="4">넷째주</option>
-          <option value="-1">마지막주</option>
-        </select>
+      <div style="flex:1 1 100%;">
+        <label>몇째주만(선택, 여러 개 선택 가능)</label>
+        <div class="week-check-group">
+          <label class="week-check"><input type="checkbox" value="1" class="weekOfMonth-check"> 첫째주</label>
+          <label class="week-check"><input type="checkbox" value="2" class="weekOfMonth-check"> 둘째주</label>
+          <label class="week-check"><input type="checkbox" value="3" class="weekOfMonth-check"> 셋째주</label>
+          <label class="week-check"><input type="checkbox" value="4" class="weekOfMonth-check"> 넷째주</label>
+          <label class="week-check"><input type="checkbox" value="-1" class="weekOfMonth-check"> 마지막주</label>
+        </div>
+        <p style="font-size:12px;color:#888;margin:4px 0 0;">아무것도 선택 안 하면 전체 주가 대상이 됩니다.</p>
       </div>
     </div>
     <div class="row">
@@ -137,7 +140,7 @@
 
 <script>
 // ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요
-const API_URL = 'https://script.google.com/macros/s/AKfycbxxiRb7USiEmsyM_49Tx9hE4vWYbGUVY3lk-gXCo-wTh7Iozff1NtYBog3SGHksjV2O/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 let PW = '';
 
 async function apiPost(action, extra){
@@ -187,7 +190,7 @@ async function addSlots(){
     dateFrom: document.getElementById('dateFrom').value,
     dateTo: document.getElementById('dateTo').value,
     onlyWeekday: document.getElementById('onlyWeekday').value,
-    weekOfMonth: document.getElementById('weekOfMonth').value,
+    weekOfMonth: Array.from(document.querySelectorAll('.weekOfMonth-check:checked')).map(c => c.value),
     startTime: document.getElementById('startTime').value,
     endTime: document.getElementById('endTime').value,
     lunchStart: document.getElementById('lunchStart').value,
