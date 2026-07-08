@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>전매동의 신청서 접수확인 - 인천검단 AB13 호반써밋Ⅲ</title>
+<meta property="og:title" content="전매동의 신청서 접수확인 - 인천검단 AB13 호반써밋Ⅲ">
+<meta property="og:description" content="동/호, 계약자 성명, 휴대폰 뒷자리 4자리로 전매동의 신청서 접수 현황을 확인하세요.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://hoban-sm.github.io/hoban_ih_1670-1331/check.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="전매동의 신청서 접수확인 - 인천검단 AB13 호반써밋Ⅲ">
+<meta name="twitter:description" content="동/호, 계약자 성명, 휴대폰 뒷자리 4자리로 전매동의 신청서 접수 현황을 확인하세요.">
 <style>
   :root{ --hoban-orange:#e85c0d; --gray-bg:#f5f6f8; --border:#dcdfe4; --text:#222; }
   *{box-sizing:border-box;}
@@ -71,9 +78,14 @@
 </div>
 
 <script>
+// 서버 응답이 "2026-08-24" 든 "2026-08-24T15:00:00.000Z" 든 항상 날짜만 깔끔하게 추출
+function cleanDate_(d){
+  return String(d || '').split('T')[0];
+}
+
 // ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요 (index.html / admin.html과 동일한 URL)
-const API_URL = 'https://script.google.com/macros/s/AKfycbxxiRb7USiEmsyM_49Tx9hE4vWYbGUVY3lk-gXCo-wTh7Iozff1NtYBog3SGHksjV2O/exec';
-  
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+
 document.getElementById('checkForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const errMsg = document.getElementById('errMsg');
@@ -119,7 +131,7 @@ document.getElementById('checkForm').addEventListener('submit', async (e) => {
           <table>
             <tr><td>동/호</td><td>${r.dong}동 ${r.ho}호</td></tr>
             <tr><td>접수일시</td><td>${new Date(r.submittedAt).toLocaleString('ko-KR')}</td></tr>
-            <tr><td>방문 예정일시</td><td>${r.visitDate} ${r.visitTime}</td></tr>
+            <tr><td>방문 예정일시</td><td>${cleanDate_(r.visitDate)} ${r.visitTime}</td></tr>
             <tr><td>접수번호</td><td style="font-size:11.5px;color:#999;">${r.reservationId}</td></tr>
           </table>
         </div>

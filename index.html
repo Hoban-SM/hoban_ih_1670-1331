@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>부부 공동명의(분양권 전매) 신청 예약 - 인천검단 AB13 호반써밋Ⅲ</title>
+<meta property="og:title" content="부부 공동명의(분양권 전매) 신청 예약 - 인천검단 AB13 호반써밋Ⅲ">
+<meta property="og:description" content="원하는 날짜와 시간을 선택해 온라인으로 부부 공동명의 변경(분양권 전매) 신청서를 접수하세요.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://hoban-sm.github.io/hoban_ih_1670-1331/index.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="부부 공동명의(분양권 전매) 신청 예약 - 인천검단 AB13 호반써밋Ⅲ">
+<meta name="twitter:description" content="원하는 날짜와 시간을 선택해 온라인으로 부부 공동명의 변경(분양권 전매) 신청서를 접수하세요.">
 <style>
   :root{
     --hoban-orange:#e85c0d;
@@ -61,6 +68,27 @@
   #result{padding:40px 20px; text-align:center;}
   #result h2{color:var(--hoban-orange);}
   .loading{text-align:center; padding:20px; color:#888; font-size:13px;}
+
+  .next-steps{
+    margin-top:32px; padding-top:24px; border-top:1px dashed var(--border);
+    text-align:left;
+  }
+  .next-steps h3{font-size:15px; margin:0 0 14px; text-align:center;}
+  .next-steps .ns-item{
+    display:flex; gap:10px; padding:10px 12px; border-radius:8px; margin-bottom:8px; font-size:13px;
+    background:#fff7ef; border:1px solid #ffe2c2;
+  }
+  .next-steps .ns-item.ns-done{background:#eef8f0; border-color:#bfe5c8;}
+  .next-steps .ns-item.ns-wait{background:#eef4fb; border-color:#c3d9f0;}
+  .next-steps .ns-num{
+    flex-shrink:0; width:22px; height:22px; border-radius:50%; background:var(--hoban-orange); color:#fff;
+    font-size:12px; font-weight:bold; display:flex; align-items:center; justify-content:center;
+  }
+  .next-steps .ns-item.ns-done .ns-num{background:#2f9e52;}
+  .next-steps .ns-item.ns-wait .ns-num{background:#3a72b0;}
+  .next-steps .ns-title{font-weight:bold; margin-bottom:2px;}
+  .next-steps .ns-desc{color:#777; font-size:12px;}
+  .next-steps .ns-link{display:block; text-align:center; margin-top:14px; font-size:13px;}
 
   /* 달력 */
   .cal-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
@@ -237,7 +265,7 @@
 
 <script>
 // ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요
-const API_URL = 'https://script.google.com/macros/s/AKfycbxxiRb7USiEmsyM_49Tx9hE4vWYbGUVY3lk-gXCo-wTh7Iozff1NtYBog3SGHksjV2O/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
 // 대한민국 공휴일 (2026년 기준, 필요시 목록 갱신)
 const HOLIDAYS_KR = new Set([
@@ -496,7 +524,36 @@ document.getElementById('resvForm').addEventListener('submit', async (e) => {
           예약일에 견본주택(경기도 김포시 사우동 547-8)으로 방문하시어<br>
           관련 서류를 제출해주시기 바랍니다.<br>
           문의: 1670-1331
-        </p>`;
+        </p>
+
+        <div class="next-steps">
+          <h3>향후 절차 안내</h3>
+          <div class="ns-item ns-done">
+            <div class="ns-num">✓</div>
+            <div><div class="ns-title">1. 전매신청서 접수 및 일정 예약</div><div class="ns-desc">방금 완료하셨습니다</div></div>
+          </div>
+          <div class="ns-item">
+            <div class="ns-num">2</div>
+            <div><div class="ns-title">증여계약서 작성 및 검인</div><div class="ns-desc">인천서구청 검단출장소, 양도인·양수인 방문</div></div>
+          </div>
+          <div class="ns-item">
+            <div class="ns-num">3</div>
+            <div><div class="ns-title">중도금 대출은행 방문</div><div class="ns-desc">대출세대만 해당, 동별 취급은행 별도 확인</div></div>
+          </div>
+          <div class="ns-item">
+            <div class="ns-num">4</div>
+            <div><div class="ns-title">전매동의 신청서 작성 및 권리의무 승계</div><div class="ns-desc">견본주택, 양도인 본인 필수 방문(대리 불가)</div></div>
+          </div>
+          <div class="ns-item ns-wait">
+            <div class="ns-num">5</div>
+            <div><div class="ns-title">전매 심사 / 동의</div><div class="ns-desc">LH 인천지역본부, 시행사 접수 후 약 3주 소요</div></div>
+          </div>
+          <div class="ns-item">
+            <div class="ns-num">6</div>
+            <div><div class="ns-title">계약서 수령</div><div class="ns-desc">견본주택 직접 방문 수령(우편발송 불가)</div></div>
+          </div>
+          <a class="ns-link" href="guide.html">▶ 절차 및 구비서류 자세히 보기</a>
+        </div>`;
     } else {
       alert('접수 실패: ' + (json.error || '알 수 없는 오류'));
       btn.disabled = false;
