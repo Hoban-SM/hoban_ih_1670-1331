@@ -265,7 +265,7 @@
 
 <script>
 // ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요
-const API_URL = 'https://script.google.com/macros/s/AKfycbxxiRb7USiEmsyM_49Tx9hE4vWYbGUVY3lk-gXCo-wTh7Iozff1NtYBog3SGHksjV2O/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
 // 대한민국 공휴일 (2026년 기준, 필요시 목록 갱신)
 const HOLIDAYS_KR = new Set([
@@ -290,24 +290,55 @@ let selectedSlotId = null;
 let selectedDate = null;
 let calYear, calMonth; // calMonth: 0-11
 
-async function loadSlots(){
+const SLOTS_CACHE_KEY = 'ab13_slots_cache_v1';
+
+function loadSlots(){
   const area = document.getElementById('slotArea');
+
+  // 1) 캐시된 데이터가 있으면 네트워크 응답을 기다리지 않고 즉시 화면부터 그림 (체감 속도 개선)
   try{
-    const res = await fetch(API_URL + '?action=getSlots');
-    const json = await res.json();
-    if(!json.ok) throw new Error(json.error || '조회 실패');
-    slots = json.data;
-
-    slotsByDate = {};
-    slots.forEach(s => {
-      (slotsByDate[s.date] = slotsByDate[s.date] || []).push(s);
-    });
-
-    if(slots.length === 0){
-      area.innerHTML = '현재 예약 가능한 일정이 없습니다. 문의처(1670-1331)로 연락 바랍니다.';
-      return;
+    const cached = sessionStorage.getItem(SLOTS_CACHE_KEY);
+    if(cached){
+      const parsed = JSON.parse(cached);
+      if(parsed && Array.isArray(parsed.data) && parsed.data.length){
+        applySlots(parsed.data);
+      }
     }
+  }catch(e){ /* 캐시 사용 불가 시 무시하고 아래 네트워크 요청으로 진행 */ }
 
+  // 2) 항상 서버에서 최신 데이터를 백그라운드로 받아와 갱신 (예약 마감 등 최신 상태 반영)
+  fetch(API_URL + '?action=getSlots')
+    .then(res => res.json())
+    .then(json => {
+      if(!json.ok) throw new Error(json.error || '조회 실패');
+      applySlots(json.data);
+      try{
+        sessionStorage.setItem(SLOTS_CACHE_KEY, JSON.stringify({ data: json.data, ts: Date.now() }));
+      }catch(e){ /* 저장 공간 부족 등은 무시 */ }
+    })
+    .catch(err => {
+      if(!slots || slots.length === 0){
+        area.innerHTML = '예약 가능 일정을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.<br><span style="font-size:11px;color:#c00;">'+err+'</span>';
+      }
+    });
+}
+
+function applySlots(data){
+  slots = data;
+  slotsByDate = {};
+  slots.forEach(s => {
+    (slotsByDate[s.date] = slotsByDate[s.date] || []).push(s);
+  });
+
+  const area = document.getElementById('slotArea');
+
+  if(slots.length === 0){
+    area.innerHTML = '현재 예약 가능한 일정이 없습니다. 문의처(1670-1331)로 연락 바랍니다.';
+    return;
+  }
+
+  // 달력 뼈대는 최초 한 번만 그리고, 이후 백그라운드 갱신 시에는 내용만 새로고침 (사용자가 선택한 시간이 사라지지 않도록)
+  if(!document.getElementById('calGrid')){
     const firstDate = new Date(Object.keys(slotsByDate).sort()[0]);
     calYear = firstDate.getFullYear();
     calMonth = firstDate.getMonth();
@@ -336,11 +367,9 @@ async function loadSlots(){
 
     document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
     document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
-
-    renderCalendar();
-  }catch(err){
-    area.innerHTML = '예약 가능 일정을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.<br><span style="font-size:11px;color:#c00;">'+err+'</span>';
   }
+
+  renderCalendar();
 }
 
 function changeMonth(diff){
