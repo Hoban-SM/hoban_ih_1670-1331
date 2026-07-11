@@ -83,6 +83,16 @@ function cleanDate_(d){
   return String(d || '').split('T')[0];
 }
 
+// 동/호 등 사용자가 입력한 값을 화면에 꽂아 넣기 전 HTML 이스케이프 (저장형 XSS 방지)
+function escapeHtml_(str){
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요 (index.html / admin.html과 동일한 URL)
 const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
@@ -127,12 +137,12 @@ document.getElementById('checkForm').addEventListener('submit', async (e) => {
     } else {
       resultArea.innerHTML = json.data.map(r => `
         <div class="result-card">
-          <span class="badge">${r.status || '접수완료'}</span>
+          <span class="badge">${escapeHtml_(r.status || '접수완료')}</span>
           <table>
-            <tr><td>동/호</td><td>${r.dong}동 ${r.ho}호</td></tr>
-            <tr><td>접수일시</td><td>${new Date(r.submittedAt).toLocaleString('ko-KR')}</td></tr>
-            <tr><td>방문 예정일시</td><td>${cleanDate_(r.visitDate)} ${r.visitTime}</td></tr>
-            <tr><td>접수번호</td><td style="font-size:11.5px;color:#999;">${r.reservationId}</td></tr>
+            <tr><td>동/호</td><td>${escapeHtml_(r.dong)}동 ${escapeHtml_(r.ho)}호</td></tr>
+            <tr><td>접수일시</td><td>${escapeHtml_(new Date(r.submittedAt).toLocaleString('ko-KR'))}</td></tr>
+            <tr><td>방문 예정일시</td><td>${escapeHtml_(cleanDate_(r.visitDate))} ${escapeHtml_(r.visitTime)}</td></tr>
+            <tr><td>접수번호</td><td style="font-size:11.5px;color:#999;">${escapeHtml_(r.reservationId)}</td></tr>
           </table>
         </div>
       `).join('');

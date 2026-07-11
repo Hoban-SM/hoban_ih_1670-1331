@@ -141,8 +141,25 @@
 
 <script>
 // ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요
-const API_URL = 'https://script.google.com/macros/s/AKfycbxxiRb7USiEmsyM_49Tx9hE4vWYbGUVY3lk-gXCo-wTh7Iozff1NtYBog3SGHksjV2O/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 let PW = '';
+
+// 사용자가 입력한 값(성명, 연락처, 동/호 등)을 화면에 그대로 꽂아 넣지 않고
+// HTML 특수문자를 이스케이프해서 저장형 XSS(악성 스크립트 삽입)를 방지
+function escapeHtml_(str){
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// 링크로 쓸 URL도 http(s)로 시작하는 것만 허용 (javascript: 등 악성 스킴 차단)
+function safeUrl_(url){
+  const u = String(url || '');
+  return /^https?:\/\//i.test(u) ? u : '';
+}
 
 async function apiPost(action, extra){
   const res = await fetch(API_URL, {
@@ -169,7 +186,7 @@ async function login(){
       loadSlots();
       loadReservations();
     }else{
-      document.getElementById('loginMsg').textContent = '비밀번호가 올바르지 않습니다.';
+      document.getElementById('loginMsg').textContent = json.error || '비밀번호가 올바르지 않습니다.';
     }
   }catch(err){
     document.getElementById('loginMsg').textContent = '로그인 오류: ' + err;
@@ -229,16 +246,17 @@ async function loadSlots(){
   const tbody = document.querySelector('#slotTable tbody');
   tbody.innerHTML = '';
   document.getElementById('selectAllSlots').checked = false;
-  if(!json.ok){ tbody.innerHTML = `<tr><td colspan="8">불러오기 실패: ${json.error}</td></tr>`; return; }
+  if(!json.ok){ tbody.innerHTML = `<tr><td colspan="8">불러오기 실패: ${escapeHtml_(json.error)}</td></tr>`; return; }
   json.data.sort((a,b)=> (a.date+a.start).localeCompare(b.date+b.start));
   json.data.forEach(s => {
     const tr = document.createElement('tr');
+    const safeId = escapeHtml_(s.id);
     tr.innerHTML = `
-      <td><input type="checkbox" class="slot-check" value="${s.id}"></td>
-      <td>${s.date}</td><td>${s.weekday}</td><td>${s.start}~${s.end}</td>
-      <td>${s.capacity}</td><td>${s.reserved}</td>
+      <td><input type="checkbox" class="slot-check" value="${safeId}"></td>
+      <td>${escapeHtml_(s.date)}</td><td>${escapeHtml_(s.weekday)}</td><td>${escapeHtml_(s.start)}~${escapeHtml_(s.end)}</td>
+      <td>${Number(s.capacity)}</td><td>${Number(s.reserved)}</td>
       <td class="${s.reserved < s.capacity ? 'status-open' : 'status-closed'}">${s.reserved < s.capacity ? '예약가능' : '마감'}</td>
-      <td><button class="del-btn" onclick="deleteSlot('${s.id}')">삭제</button></td>`;
+      <td><button class="del-btn" onclick="deleteSlot('${safeId}')">삭제</button></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -277,23 +295,23 @@ async function loadReservations(){
   const json = await apiPost('getReservations');
   const tbody = document.querySelector('#resvTable tbody');
   tbody.innerHTML = '';
-  if(!json.ok){ tbody.innerHTML = `<tr><td colspan="9">불러오기 실패: ${json.error}</td></tr>`; return; }
+  if(!json.ok){ tbody.innerHTML = `<tr><td colspan="9">불러오기 실패: ${escapeHtml_(json.error)}</td></tr>`; return; }
   const STATUS_OPTIONS = ['접수완료','서류심사중','LH동의완료','계약완료','반려'];
-  const fileLink = (url) => url ? `<a class="file-link" href="${url}" target="_blank">보기</a>` : '-';
+  const fileLink = (url) => { const u = safeUrl_(url); return u ? `<a class="file-link" href="${escapeHtml_(u)}" target="_blank" rel="noopener noreferrer">보기</a>` : '-'; };
   json.data.forEach(r => {
-    const id = r['예약ID'];
+    const id = escapeHtml_(r['예약ID']);
     const cur = r['상태'] || '접수완료';
     const options = STATUS_OPTIONS.map(s => `<option value="${s}" ${s===cur?'selected':''}>${s}</option>`).join('');
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${new Date(r['접수일시']).toLocaleString('ko-KR')}</td>
-      <td>${r['예약일']} ${r['예약시간']}</td>
-      <td>${r['동']}동 ${r['호']}호</td>
-      <td>${r['양도인_성명']}<br>${r['양도인_연락처']}</td>
-      <td>${r['양수인_성명']}<br>${r['양수인_연락처']}</td>
+      <td>${escapeHtml_(new Date(r['접수일시']).toLocaleString('ko-KR'))}</td>
+      <td>${escapeHtml_(r['예약일'])} ${escapeHtml_(r['예약시간'])}</td>
+      <td>${escapeHtml_(r['동'])}동 ${escapeHtml_(r['호'])}호</td>
+      <td>${escapeHtml_(r['양도인_성명'])}<br>${escapeHtml_(r['양도인_연락처'])}</td>
+      <td>${escapeHtml_(r['양수인_성명'])}<br>${escapeHtml_(r['양수인_연락처'])}</td>
       <td>${fileLink(r['전매신청서_링크'])}</td>
       <td>${fileLink(r['가족관계증명서_링크'])}</td>
-      <td style="font-size:11.5px;">수집이용: ${r['개인정보동의_수집이용'] || '-'}<br>제3자제공: ${r['개인정보동의_제3자제공'] || '-'}<br>유의사항: ${r['개인정보동의_유의사항확인'] || '-'}</td>
+      <td style="font-size:11.5px;">수집이용: ${escapeHtml_(r['개인정보동의_수집이용'] || '-')}<br>제3자제공: ${escapeHtml_(r['개인정보동의_제3자제공'] || '-')}<br>유의사항: ${escapeHtml_(r['개인정보동의_유의사항확인'] || '-')}</td>
       <td><select onchange="updateStatus('${id}', this.value)">${options}</select></td>`;
     tbody.appendChild(tr);
   });

@@ -169,6 +169,7 @@
   </div>
 
   <form id="resvForm">
+    <input type="text" id="hp_field" name="website" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" aria-hidden="true">
     <div class="section">
       <h2>1. 희망 일시 선택</h2>
       <div id="slotArea" class="loading">예약 가능 일정을 불러오는 중...</div>
@@ -265,7 +266,7 @@
 
 <script>
 // ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요
-const API_URL = 'https://script.google.com/macros/s/AKfycbxxiRb7USiEmsyM_49Tx9hE4vWYbGUVY3lk-gXCo-wTh7Iozff1NtYBog3SGHksjV2O/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
 // 대한민국 공휴일 (2026년 기준, 필요시 목록 갱신)
 const HOLIDAYS_KR = new Set([
@@ -318,7 +319,7 @@ function loadSlots(){
     })
     .catch(err => {
       if(!slots || slots.length === 0){
-        area.innerHTML = '예약 가능 일정을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.<br><span style="font-size:11px;color:#c00;">'+err+'</span>';
+        area.innerHTML = '예약 가능 일정을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.<br><span style="font-size:11px;color:#c00;">'+String(err).replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span>';
       }
     });
 }
@@ -515,6 +516,7 @@ document.getElementById('resvForm').addEventListener('submit', async (e) => {
     const payload = {
       action: 'reserve',
       slotId: selectedSlotId,
+      hp: document.getElementById('hp_field').value,
       dong: document.getElementById('dong').value,
       ho: document.getElementById('ho').value,
       transferor: {
