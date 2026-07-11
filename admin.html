@@ -125,6 +125,7 @@
     <h2>접수된 신청 내역</h2>
     <button class="secondary" onclick="loadReservations()">새로고침</button>
     <p style="font-size:12px;color:#888;">※ 상태값은 접수확인 페이지에 그대로 노출됩니다. (예: 접수완료 → 서류심사중 → LH동의완료 → 계약완료)</p>
+    <p style="font-size:12px;color:#888;">※ 같은 동/호로는 진행 중인 접수가 있으면 재신청이 자동으로 막힙니다. 재신청이 필요하면 해당 건 상태를 <b>"취소"</b> 또는 <b>"반려"</b>로 바꿔주세요.</p>
     <div style="overflow-x:auto;">
     <table id="resvTable">
       <thead><tr>
@@ -141,7 +142,7 @@
 
 <script>
 // ⚠️ 배포한 Google Apps Script 웹앱 URL로 교체하세요
-const API_URL = 'https://script.google.com/macros/s/AKfycbxxiRb7USiEmsyM_49Tx9hE4vWYbGUVY3lk-gXCo-wTh7Iozff1NtYBog3SGHksjV2O/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 let PW = '';
 
 // 사용자가 입력한 값(성명, 연락처, 동/호 등)을 화면에 그대로 꽂아 넣지 않고
@@ -296,7 +297,7 @@ async function loadReservations(){
   const tbody = document.querySelector('#resvTable tbody');
   tbody.innerHTML = '';
   if(!json.ok){ tbody.innerHTML = `<tr><td colspan="9">불러오기 실패: ${escapeHtml_(json.error)}</td></tr>`; return; }
-  const STATUS_OPTIONS = ['접수완료','서류심사중','LH동의완료','계약완료','반려'];
+  const STATUS_OPTIONS = ['접수완료','서류심사중','LH동의완료','계약완료','반려','취소'];
   const fileLink = (url) => { const u = safeUrl_(url); return u ? `<a class="file-link" href="${escapeHtml_(u)}" target="_blank" rel="noopener noreferrer">보기</a>` : '-'; };
   json.data.forEach(r => {
     const id = escapeHtml_(r['예약ID']);
